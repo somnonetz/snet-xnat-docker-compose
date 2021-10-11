@@ -1,57 +1,71 @@
 version: '3.7'
 services:
   xnat-web:
-    build:
-      context: ./xnat
-      args:
-        XNAT_VERSION: ${XNAT_VERSION}
-        XNAT_SMTP_ENABLED: ${XNAT_SMTP_ENABLED}
-        XNAT_SMTP_HOSTNAME: ${XNAT_SMTP_HOSTNAME}
-        XNAT_SMTP_PORT: ${XNAT_SMTP_PORT}
-        XNAT_SMTP_AUTH: ${XNAT_SMTP_AUTH}
-        XNAT_SMTP_USERNAME: ${XNAT_SMTP_USERNAME}
-        XNAT_SMTP_PASSWORD: ${XNAT_SMTP_PASSWORD}
-        XNAT_DATASOURCE_DRIVER: ${XNAT_DATASOURCE_DRIVER}
-        XNAT_DATASOURCE_URL: ${XNAT_DATASOURCE_URL}
-        XNAT_DATASOURCE_USERNAME: ${XNAT_DATASOURCE_USERNAME}
-        XNAT_DATASOURCE_PASSWORD: ${XNAT_DATASOURCE_PASSWORD}
-        TOMCAT_XNAT_FOLDER: ${TOMCAT_XNAT_FOLDER}
-        XNAT_ROOT: ${XNAT_ROOT}
-        XNAT_HOME: ${XNAT_HOME}
-        XNAT_EMAIL: ${XNAT_EMAIL}
+    image: somnonetz/snet-xnat
+    container_name: xnat-web
+    environment:
+      CATALINA_OPTS: -Xms${XNAT_MIN_HEAP} -Xmx${XNAT_MAX_HEAP} -Dxnat.home=${XNAT_HOME}
+      XNAT_VERSION: ${XNAT_VERSION}
+      XNAT_SMTP_ENABLED: ${XNAT_SMTP_ENABLED}
+      XNAT_SMTP_HOSTNAME: ${XNAT_SMTP_HOSTNAME}
+      XNAT_SMTP_PORT: ${XNAT_SMTP_PORT}
+      XNAT_SMTP_AUTH: ${XNAT_SMTP_AUTH}
+      XNAT_SMTP_USERNAME: ${XNAT_SMTP_USERNAME}
+      XNAT_SMTP_PASSWORD: ${XNAT_SMTP_PASSWORD}
+      XNAT_DATASOURCE_DRIVER: ${XNAT_DATASOURCE_DRIVER}
+      XNAT_DATASOURCE_URL: ${XNAT_DATASOURCE_URL}
+      XNAT_DATASOURCE_USERNAME: ${XNAT_DATASOURCE_USERNAME}
+      XNAT_DATASOURCE_PASSWORD: ${XNAT_DATASOURCE_PASSWORD}
+      TOMCAT_XNAT_FOLDER: ${TOMCAT_XNAT_FOLDER}
+      PGPASSWORD: ${XNAT_DATASOURCE_PASSWORD}
+      XNAT_ROOT: ${XNAT_ROOT}
+      XNAT_HOME: ${XNAT_HOME}
+      XNAT_EMAIL: ${XNAT_EMAIL}
+      XNAT_API_URL: ${XNAT_API_URL}
+      VIRTUAL_HOST: ${XNAT_HOST}
+      VIRTUAL_PORT: 8080
+    expose:
+      - "8080"
     ports:
-      - 8104:8104
+      - "8104:8104"
     volumes:
-      - ./xnat/plugins:${XNAT_HOME}/plugins
       - ./xnat-data/home/logs:${XNAT_HOME}/logs
       - ./xnat-data/archive:${XNAT_ROOT}/archive
       - ./xnat-data/build:${XNAT_ROOT}/build
       - ./xnat-data/cache:${XNAT_ROOT}/cache
+      # - ../copla-editor/sn-editor/build:/usr/local/tomcat/webapps/sn-editor
       - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       - xnat-db
-    environment:
-      - CATALINA_OPTS=-Xms${XNAT_MIN_HEAP} -Xmx${XNAT_MAX_HEAP} -Dxnat.home=${XNAT_HOME}
-      - XNAT_HOME=${XNAT_HOME}
+    networks:
+      - snet-apps
 
   xnat-db:
-    build:
-      context: ./postgres
-      args:
-        XNAT_DATASOURCE_PASSWORD: ${XNAT_DATASOURCE_PASSWORD}
+    image: postgres:12.7-alpine
+    container_name: xnat-db
+    environment:
+      POSTGRES_USER: ${XNAT_DATASOURCE_USERNAME}
+      POSTGRES_PASSWORD: ${XNAT_DATASOURCE_PASSWORD}
+      POSTGRES_DB: ${XNAT_DATASOURCE_DBNAME}
     expose:
       - "5432"
     volumes:
       - ./postgres-data:/var/lib/postgresql/data
-    environment:
-      POSTGRES_PASSWORD: ${XNAT_DATASOURCE_ADMIN_PASSWORD}
+    networks:
+      - snet-apps
 
-  xnat-nginx:
-    build: ./nginx
+  nginx-proxy:
+    image: nginxproxy/nginx-proxy
+    container_name: nginx-proxy
     ports:
       - "80:80"
-    expose:
-      - "80"
-    links:
-      - xnat-web
+    volumes:
+      - ./nginx-proxy.conf:/etc/nginx/proxy.conf
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+    networks:
+      - snet-apps
 
+networks:
+  snet-apps:
+    driver: bridge
+    name: snet-apps
