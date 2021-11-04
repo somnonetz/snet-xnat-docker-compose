@@ -34,6 +34,7 @@ services:
       - ./xnat-data/build:${XNAT_ROOT}/build
       - ./xnat-data/cache:${XNAT_ROOT}/cache
       # - ../copla-editor/sn-editor/build:/usr/local/tomcat/webapps/sn-editor
+      # - ../snet-plugin/build/libs/snet-plugin-0.1.9.jar:/data/xnat/home/plugins/snet-plugin-0.1.9.jar
       - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       - xnat-db
