@@ -89,7 +89,7 @@ services:
     environment:
       - DEFAULT_EMAIL=bowden@htw-berlin.de
     networks:
-      - snet-asclepios
+      - snet-apps
 
 volumes:
   conf:
