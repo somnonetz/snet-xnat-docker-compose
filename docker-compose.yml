@@ -1,8 +1,8 @@
-version: '3.7'
+version: '3'
 services:
-  xnat-web:
+  xnat-demo:
     image: somnonetz/snet-xnat
-    container_name: xnat-web
+    container_name: xnat-demo
     environment:
       CATALINA_OPTS: -Xms${XNAT_MIN_HEAP} -Xmx${XNAT_MAX_HEAP} -Dxnat.home=${XNAT_HOME}
       XNAT_VERSION: ${XNAT_VERSION}
@@ -23,11 +23,10 @@ services:
       XNAT_EMAIL: ${XNAT_EMAIL}
       XNAT_API_URL: ${XNAT_API_URL}
       VIRTUAL_HOST: ${XNAT_HOST}
+      LETSENCRYPT_HOST: ${XNAT_HOST}
       VIRTUAL_PORT: 8080
     expose:
       - "8080"
-    ports:
-      - "8104:8104"
     volumes:
       - ./xnat-data/home/logs:${XNAT_HOME}/logs
       - ./xnat-data/archive:${XNAT_ROOT}/archive
@@ -101,5 +100,5 @@ volumes:
 
 networks:
   snet-apps:
-    driver: bridge
     name: snet-apps
+
